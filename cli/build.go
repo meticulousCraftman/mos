@@ -87,6 +87,8 @@ var (
 	logWriter io.Writer
 )
 
+// This variable is used everywhere else in the program to point to the current working directory as the
+// project directory
 const (
 	projectDir = "."
 )
@@ -174,9 +176,14 @@ func buildHandler(ctx context.Context, devConn dev.DevConn) error {
 
 func doBuild(ctx context.Context, bParams *buildParams) error {
 	var err error
+	// get a path for the build, and that would be project_dir/build/ folder
 	buildDir := moscommon.GetBuildDir(projectDir)
 
+	// If the build target is not specified, make it equal to "all"
 	if bParams.BuildTarget == "" {
+		// If the build target is not defined in the buildParams structure,
+		// point it to default BuildTargetDefault, which is "all".
+		// BuildTargetDefault constant is define in cli/common/common.go
 		bParams.BuildTarget = moscommon.BuildTargetDefault
 	}
 
@@ -184,7 +191,9 @@ func doBuild(ctx context.Context, bParams *buildParams) error {
 
 	// Request server version in parallel
 	serverVersionCh := make(chan *version.VersionJson, 1)
+	// Check whether this is a local build, (local defined in main.go)
 	if true || !*local {
+		// Create a goroutine(thread) for checking the mos version on the server
 		go func() {
 			v, err := update.GetServerMosVersion(string(update.GetUpdateChannel()), bParams.Platform, bParams.BuildVars["BOARD"])
 			if err != nil {
@@ -195,10 +204,12 @@ func doBuild(ctx context.Context, bParams *buildParams) error {
 		}()
 	}
 
+	// Create the "build/" directory under the project folder
 	if err := os.MkdirAll(buildDir, 0777); err != nil {
 		return errors.Trace(err)
 	}
 
+	// Get the path for the "build.log" file and create a new file in that directory.
 	blog := moscommon.GetBuildLogFilePath(buildDir)
 	logFile, err := os.Create(blog)
 	if err != nil {
@@ -206,8 +217,10 @@ func doBuild(ctx context.Context, bParams *buildParams) error {
 	}
 
 	// Remove local log, ignore any errors
+	// TODO I wonder what is the local log all about :/
 	os.RemoveAll(moscommon.GetBuildLogLocalFilePath(buildDir))
 
+	// Create logger objects
 	logWriterStderr = io.MultiWriter(logFile, &logBuf, os.Stderr)
 	logWriter = io.MultiWriter(logFile, &logBuf)
 
@@ -216,15 +229,20 @@ func doBuild(ctx context.Context, bParams *buildParams) error {
 	}
 
 	// Fail fast if there is no manifest
+	// ManifestFile is mos.yml file
 	if _, err := os.Stat(moscommon.GetManifestFilePath(projectDir)); os.IsNotExist(err) {
 		return errors.Errorf("No mos.yml file")
 	}
 
 	if *local {
+		// Execute this if we have to build locally
 		err = buildLocal(ctx, bParams)
 	} else {
+		// execute this if we have to build remotely
 		err = buildRemote(bParams)
 	}
+
+	// raise any errors while building it either locally or remotely
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -232,6 +250,7 @@ func doBuild(ctx context.Context, bParams *buildParams) error {
 		return nil
 	}
 
+	// If the build target is "all" execute the following code
 	if bParams.BuildTarget == moscommon.BuildTargetDefault {
 		// We were building a firmware, so perform the required actions with moving
 		// firmware around, etc.
@@ -281,7 +300,7 @@ func doBuild(ctx context.Context, bParams *buildParams) error {
 	case v := <-serverVersionCh:
 		serverVer := v.BuildVersion
 		localVer := version.Version
-
+		// checking for updates and printing the required message
 		if (update.GetUpdateChannel() == update.UpdateChannelRelease && serverVer != localVer) ||
 			(update.GetUpdateChannel() == update.UpdateChannelLatest && strings.Compare(serverVer, localVer) > 0) {
 			freportf(logWriterStderr, "By the way, there is a newer version available: %q (you use %q). "+

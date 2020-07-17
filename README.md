@@ -94,4 +94,5 @@ Available options in the `build` command:
     - `buildHandler()` This function prepares the `buildParams` struct object to store information 
     about the current build and then call the `doBuild()` function passing it the address to the 
     `buildParams`structure.
-    - `doBuild()`
+    - `doBuild()` Create build directories and files into it. Check for mos.yml in project dir.
+    - `buildLocal()` defined in `cli/build_local.go`.
