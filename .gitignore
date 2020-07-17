@@ -8,3 +8,5 @@ pkg.build_id
 pkg.version
 version/version.json
 version/version.go
+.idea/
+build/

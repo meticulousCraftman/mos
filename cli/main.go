@@ -21,7 +21,7 @@ package main
 import (
 	"context"
 	cRand "crypto/rand"
-	goflag "flag"
+	goflag "flag"	// for command line flag parsing
 	"fmt"
 	"log"
 	"math/big"
@@ -34,7 +34,7 @@ import (
 	"github.com/juju/errors"
 	flag "github.com/spf13/pflag"
 
-	"github.com/mongoose-os/mos/common/pflagenv"
+	"github.com/mongoose-os/mos/common/pflagenv"	// Expose all your pflag variables as environment variables
 	"github.com/mongoose-os/mos/cli/aws"
 	"github.com/mongoose-os/mos/cli/azure"
 	"github.com/mongoose-os/mos/cli/clone"
@@ -106,6 +106,7 @@ const (
 	No               = 0.0
 )
 
+// signature of handler type
 type handler func(ctx context.Context, devConn dev.DevConn) error
 
 // channel of "junk" messages, which go to the console
@@ -116,6 +117,7 @@ func unimplemented() error {
 	return nil
 }
 
+// This function is called when package is initialized, this is called before main function
 func init() {
 	commands = []command{
 		{"ui", startUI, `Start GUI`, nil, nil, No, false},
@@ -185,6 +187,7 @@ func showPorts(ctx context.Context, devConn dev.DevConn) error {
 	return nil
 }
 
+// Run the handler function for the particular command, pass the context and devConn structures
 func run(c *command, ctx context.Context, devConn dev.DevConn) error {
 	if c != nil {
 		// check required flags
@@ -199,7 +202,7 @@ func run(c *command, ctx context.Context, devConn dev.DevConn) error {
 		return nil
 	}
 
-	// not found
+	// command not found, so the usage to the user
 	usage()
 	return nil
 }
@@ -229,6 +232,7 @@ func main() {
 	seed2, _ := cRand.Int(cRand.Reader, big.NewInt(4000000000))
 	mRand.Seed(seed1 ^ seed2.Int64())
 
+	// Logging
 	defer glog.Flush()
 	go func() {
 		time.Sleep(100 * time.Millisecond)
@@ -237,9 +241,11 @@ func main() {
 
 	consoleMsgs = make(chan []byte, 10)
 
+	// Define all command line flags, parse all the command line flags
 	initFlags()
 	flag.Parse()
 
+	// Change the current working directory to the present location
 	if *chdir != "" {
 		if err := os.Chdir(*chdir); err != nil {
 			log.Fatal(err)
@@ -248,6 +254,7 @@ func main() {
 
 	osSpecificInit()
 
+	// Place all command line flags in as an environment variable with MOS_ prefix
 	goflag.CommandLine.Parse([]string{}) // Workaround for noise in golang/glog
 	pflagenv.Parse(envPrefix)
 
@@ -255,6 +262,7 @@ func main() {
 	glog.Infof("Build ID: %s", version.BuildId)
 	glog.Infof("Update channel: %s", update.GetUpdateChannel())
 
+	// How can we see the messages being logged by the following statements?
 	if err := paths.Init(); err != nil {
 		log.Fatal(err)
 	}
@@ -267,20 +275,30 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Checks the timestamp of the system - something like that :/
 	consoleInit()
 
+	// Look at the arguments that we received from command line
 	if len(flag.Args()) == 0 || flag.Arg(0) == "ui" {
 		isUI = true
 		aws.IsUI = true
 	}
 
+	// TODO Figure out what the following 2 statements does?
 	ctx := context.Background()
-	var devConn dev.DevConn
+	var devConn dev.DevConn	  // devConn is an interface type
 
+	// Fetch the most recent command
 	cmd := &commands[0]
+	fmt.Printf("Flag argument that was passed to be run: %v\n", flag.Arg(0))
 	if !isUI {
+		// Command to execute depending on the first flag passed to mos tool, eg. mos duck
+		// 'duck' would be passed to getCommand() function
 		cmd = getCommand(flag.Arg(0))
 	}
+
+	// If command is not nil, do something with DevConn package
+	// TODO What does DevConn does?
 	if cmd != nil && cmd.needDevConn == Yes {
 		var err error
 		devConn, err = devutil.CreateDevConnFromFlags(ctx)
@@ -295,6 +313,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Whatever flag(0) is passed, run the handler function associated with it.
 	err := run(cmd, ctx, devConn)
 	if devConn != nil {
 		devConn.Disconnect(context.Background())

@@ -77,3 +77,32 @@ $ make
 ```
 
 It will produce `mos/mos` (or `mos/mos.exe` on Windows).
+
+## Tool Usage
+
+To get a full list of flags and commands that mos supports, use the following command.
+```
+$ mos help --full
+```
+
+Look for a way to enable more verbose logging while using the mos command. This would be helpful when trying to debug.
+```
+$ 
+```
+
+Available options in the `build` command:
+ - arch
+ - platform
+ - local
+ - repo
+ - clean
+ - server
+ 
+ ## Build Process flow
+  - `cli/main.go`
+    - `init()` Package init
+    - `main()`
+    - `getCommand()` Convert string to command struct
+    - `run()` Run the associated handler function
+  - `cli/build.go`
+    - `init()` Package init
