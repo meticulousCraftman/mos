@@ -109,6 +109,8 @@ func init() {
 // Build command handler {{{
 func buildHandler(ctx context.Context, devConn dev.DevConn) error {
 	var bParams buildParams
+
+	// If the buildParams(YAML file) flag has been set, open up and read the file
 	if *buildParamsFlag != "" {
 		buildParamsBytes, err := ioutil.ReadFile(*buildParamsFlag)
 		if err != nil {
@@ -131,21 +133,25 @@ func buildHandler(ctx context.Context, devConn dev.DevConn) error {
 			cml[parts[0]] = parts[1]
 		}
 
+		// get build variables from CLI
 		buildVarsFromCLI, err := getBuildVarsFromCLI()
 		if err != nil {
 			return errors.Trace(err)
 		}
 
+		// get cdefs declaration from CLI
 		cdefsFromCLI, err := getCdefsFromCLI()
 		if err != nil {
 			return errors.Trace(err)
 		}
 
+		// get libs specified in the CLI
 		libsFromCLI, err := getLibsFromCLI()
 		if err != nil {
 			return errors.Trace(err)
 		}
 
+		// consolidate all the information from CLI in the buildParams type object
 		bParams = buildParams{
 			ManifestAdjustments: manifest_parser.ManifestAdjustments{
 				Platform:  flags.Platform(),
@@ -162,6 +168,7 @@ func buildHandler(ctx context.Context, devConn dev.DevConn) error {
 		}
 	}
 
+	// Call the doBuild fuunction to proceed with the build
 	return errors.Trace(doBuild(ctx, &bParams))
 }
 

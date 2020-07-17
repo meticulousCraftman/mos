@@ -91,3 +91,7 @@ Available options in the `build` command:
     - `run()` Run the associated handler function
   - `cli/build.go`
     - `init()` Package init
+    - `buildHandler()` This function prepares the `buildParams` struct object to store information 
+    about the current build and then call the `doBuild()` function passing it the address to the 
+    `buildParams`structure.
+    - `doBuild()`
