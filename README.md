@@ -91,14 +91,37 @@ $
 ```
 
 Available options in the `build` command:
- - arch
- - platform
- - local
- - repo
- - clean
- - server
+  - Normal flags for build command:
+    - arch
+    - platform
+    - local
+    - repo
+    - clean
+    - server
+  - Advanceed flags for `mos build` command:
+    - build-dry-run
+    - build-params
+    - build-target
+    - module
+    - lib
+    - libs-update-interval
+    - build-cmd-extra
+    - cflags-extra
+    - cxxflags-extra
+    - lib-extra
+    - save-build-stat
+    - no-platform-check
+    - prefer-prebuilt-libs
+    - build-var
+    - cdef
+    - no-libs-update
+    - skip-clean-libs
  
  ## Build Process flow
+ `buildHandler()` defined in `cli/build.go` is accessible to `cli/main.go` without explicitly importing it.
+ This is because Go makes all the variables, constants and functions available to the source files belonging
+ to the same package. In this case both `cli/build.go` and `cli/main.go` belong to `main` package.
+ 
   - `cli/main.go`
     - `init()` Package init
     - `main()`

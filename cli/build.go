@@ -99,12 +99,13 @@ type buildParams struct {
 	NoPlatformCheck       bool
 }
 
+// Run this function on package initialization
 func init() {
 	hiddenFlags = append(hiddenFlags, "docker_images")
 }
 
 // Build {{{
-
+// This function is called by main.go to execute the build process
 // Build command handler {{{
 func buildHandler(ctx context.Context, devConn dev.DevConn) error {
 	var bParams buildParams
